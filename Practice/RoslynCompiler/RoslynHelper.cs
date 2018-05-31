@@ -5,20 +5,15 @@ using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 
-namespace Practice
+namespace RoslynCompiler
 {
     public static class RoslynHelper : Object
     {
-        public static async Task<object> Evaluate(string sourceCode)
+        public static async Task<object> Evaluate<T>(string sourceCode, object o)
         {
-            object s = await CSharpScript.EvaluateAsync(sourceCode);
+            object s = await CSharpScript.EvaluateAsync<T>(sourceCode, globals: o);
             return s;
         }
 
-        public static async Task<int> Evaluate_INT(string sourceCode)
-        {
-            int s = await CSharpScript.EvaluateAsync<int>(sourceCode);
-            return s;
-        }
     }
 }
