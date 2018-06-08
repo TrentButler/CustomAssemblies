@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace RoslynCompiler
+namespace OLD_RoslynCompiler
 {
     public class Globals
     {
@@ -14,7 +14,12 @@ namespace RoslynCompiler
         
         public class State
         {
-            public State() { }
+            public string Data { get; set; }
+            public State(string data) { Data = data; }
+            public override string ToString()
+            {
+                return Data;
+            }
         }
 
         public class Transition
@@ -26,12 +31,8 @@ namespace RoslynCompiler
 
             public override string ToString()
             {
-                return string.Format("{0} => {1}", "trent", "is a beast.jpg");
+                return string.Format("{0} => {1}", state_a.ToString(), state_b.ToString());
             }
-        }
-        public override string ToString()
-        {
-            return string.Format("{0} => {1}", "trent", "beast.jpg");
         }
     }
 }

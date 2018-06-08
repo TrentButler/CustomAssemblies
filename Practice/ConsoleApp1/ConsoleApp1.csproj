@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\RoslynCompiler\OLD_RoslynCompiler.csproj" />
     <ProjectReference Include="..\RoslynCompiler\RoslynCompiler.csproj" />
   </ItemGroup>
 

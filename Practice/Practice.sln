@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2018
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoslynCompiler", "RoslynCompiler\RoslynCompiler.csproj", "{9E0031A8-E154-4695-97F0-8B36DD8BC9EB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OLD_RoslynCompiler", "RoslynCompiler\OLD_RoslynCompiler.csproj", "{9E0031A8-E154-4695-97F0-8B36DD8BC9EB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{212F3985-4E52-41F2-B644-9E1818050220}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{212F3985-4E52-41F2-B644-9E1818050220}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
