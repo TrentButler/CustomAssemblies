@@ -12,21 +12,55 @@ namespace RoslynCompiler
 {
     public class RoslynWrapper : Object
     {
+        private static Script _script;
+
         public static async Task<T> Evaluate<T>(string sourceCode, object o)
         {
             T s = await CSharpScript.EvaluateAsync<T>(sourceCode, globals: o);
             return s;
         }
 
+        private static void CreateScript(string sourceCode)
+        {
+            _script = CSharpScript.Create(sourceCode);
+        }
+        public static void CompileScript(string sourceCode)
+        {
+            CreateScript(sourceCode);
+            _script?.Compile();
+        }
+        public static async void RunScript()
+        {
+            var run = await _script?.RunAsync();
+        }
+
         public static void Execute(string sourceCode)
         {
-            //EXPECT NO SEMICOLONS 
-            //ADD THEM WHERE THEY NEED TO BE
+            CreateScript(sourceCode);
+            var new_sourceCode = sourceCode;
 
+            try
+            {
+                CompileScript(new_sourceCode);
+                _script?.RunAsync();
+            }
+            catch (Microsoft.CodeAnalysis.Scripting.CompilationErrorException e) when (e.Message.Contains("error CS1002: ; expected"))
+            {
+                var compilation = _script?.GetCompilation();
+                var diagonstic_list = compilation.GetDiagnostics().ToList();
+                diagonstic_list.ForEach(diagonsitc =>
+                {
+                    var error_location = diagonsitc.Location.SourceSpan.Start;
+                    new_sourceCode = new_sourceCode.Insert(error_location, ";");
+                });
+            }
 
+            //ADDS SEMICOLON TO FIRST ERROR, THEN FALLS OUT OF METHOD
 
+            Console.WriteLine(new_sourceCode);
+            Console.ReadKey();
 
-            CSharpScript.RunAsync(sourceCode);
+            //CSharpScript.RunAsync(sourceCode);
         }
         public static void Execute<T>(string sourceCode, string assembly_path, List<string> assemblies)
         {
