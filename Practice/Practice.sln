@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OLD_RoslynCompiler", "Rosly
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{212F3985-4E52-41F2-B644-9E1818050220}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ALibrary", "ALibrary\ALibrary.csproj", "{81F4885E-36F8-496D-9A84-53AF8F0792EF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{212F3985-4E52-41F2-B644-9E1818050220}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{212F3985-4E52-41F2-B644-9E1818050220}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{212F3985-4E52-41F2-B644-9E1818050220}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81F4885E-36F8-496D-9A84-53AF8F0792EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81F4885E-36F8-496D-9A84-53AF8F0792EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81F4885E-36F8-496D-9A84-53AF8F0792EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81F4885E-36F8-496D-9A84-53AF8F0792EF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

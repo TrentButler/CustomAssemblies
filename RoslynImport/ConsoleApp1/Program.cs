@@ -10,9 +10,13 @@ namespace ConsoleApp1
     {
         static void Main(string[] args)
         {
-            string code = "System.Console.WriteLine(\"DO WORK\")";
+            //string assembly_path = "C:\\Users\\Redtrent\\Documents\\GitHub\\Roslyn-Import\\Practice\\ALibrary\\bin\\Debug";
+
+            //string code = "var lib = new Class1(); System.Console.WriteLine(\"DO WORK \" + lib.ToString()); System.Console.ReadLine();";
+            //RoslynCompiler.RoslynWrapper.Execute<object>(code, assembly_path, new List<string>() { "ALibrary.dll" });
+
+            string code = "System.Console.WriteLine(\"DO WORK \" + lib.ToString()) System.Console.ReadLine()";
             RoslynCompiler.RoslynWrapper.Execute(code);
-            Console.ReadLine();
         }
     }
 }
