@@ -18,14 +18,37 @@ namespace RoslynCompiler
             T s = await CSharpScript.EvaluateAsync<T>(sourceCode, globals: o);
             return s;
         }
+        //public static async Task<T> Evaluate<T>(string sourceCode)
+        //{
+        //    T s = await CSharpScript.EvaluateAsync<T>(sourceCode);
+        //    return s;
+        //}
         public static async Task<T> Evaluate<T>(string sourceCode)
         {
-            T s = await CSharpScript.EvaluateAsync<T>(sourceCode);
-            return s;
-        }
-        public static async Task<T> SIMPLE_Evaluate<T>(string sourceCode)
-        {
-            var new_sourceCode = sourceCode.Replace('\n', ';');
+            var new_sourceCode = string.Empty;
+
+            if(sourceCode.Contains('#'))
+            {
+                var hashtag_split_strings = sourceCode.Split('#').ToList();
+                foreach (var split_string in hashtag_split_strings)
+                {
+                    if (split_string is "")
+                    {
+                        continue;
+                    }
+
+                    var newLine_split_strings = split_string.Split('\n').ToList();
+                    newLine_split_strings.ForEach(newLine_split_string =>
+                    {
+                        new_sourceCode += newLine_split_string.Insert(newLine_split_string.Length, ";");
+                    });
+                }
+            }
+            else
+            {
+                new_sourceCode = sourceCode;
+            }
+
             T s = await CSharpScript.EvaluateAsync<T>(new_sourceCode);
             return s;
         }
