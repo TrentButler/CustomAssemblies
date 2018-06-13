@@ -44,23 +44,35 @@ namespace RoslynCompiler
                 CompileScript(new_sourceCode);
                 _script?.RunAsync();
             }
-            catch (Microsoft.CodeAnalysis.Scripting.CompilationErrorException e) when (e.Message.Contains("error CS1002: ; expected"))
+            catch (CompilationErrorException e) when (e.Message.Contains("error CS1002: ; expected"))
             {
                 var compilation = _script?.GetCompilation();
+
                 var diagonstic_list = compilation.GetDiagnostics().ToList();
-                diagonstic_list.ForEach(diagonsitc =>
+                diagonstic_list.ForEach(diagnostic =>
                 {
-                    var error_location = diagonsitc.Location.SourceSpan.Start;
+                    var source_span = diagnostic.Location.SourceSpan;
+                    var line_span = diagnostic.Location.GetLineSpan().Span;
+                    var start = source_span.Start;
+                    var length = source_span.Length;
+                    var end = source_span.End;
+
+                    //var invald_string = new_sourceCode.Substring(start, length);
+                    //Console.WriteLine(invald_string);
+                    //Console.ReadLine();
+
+                    var error_location = diagnostic.Location.SourceSpan.Start;
+                    if (new_sourceCode[error_location] == ')')
+                    {
+                        error_location++;
+                    }
                     new_sourceCode = new_sourceCode.Insert(error_location, ";");
+                    var code = new_sourceCode;
                 });
+
+                CompileScript(new_sourceCode);
+                _script?.RunAsync();
             }
-
-            //ADDS SEMICOLON TO FIRST ERROR, THEN FALLS OUT OF METHOD
-
-            Console.WriteLine(new_sourceCode);
-            Console.ReadKey();
-
-            //CSharpScript.RunAsync(sourceCode);
         }
         public static void Execute<T>(string sourceCode, string assembly_path, List<string> assemblies)
         {
