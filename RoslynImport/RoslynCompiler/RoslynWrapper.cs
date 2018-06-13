@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.Scripting.Hosting;
+using Microsoft.CodeAnalysis.Emit;
 
 namespace RoslynCompiler
 {
@@ -49,17 +50,19 @@ namespace RoslynCompiler
                 var compilation = _script?.GetCompilation();
 
                 var diagonstic_list = compilation.GetDiagnostics().ToList();
-                diagonstic_list.ForEach(diagnostic =>
-                {
-                    var source_span = diagnostic.Location.SourceSpan;
-                    var line_span = diagnostic.Location.GetLineSpan().Span;
-                    var start = source_span.Start;
-                    var length = source_span.Length;
-                    var end = source_span.End;
+                Stream code_stream = Stream.Null;
+                var emit_result = compilation.Emit(code_stream);
+                var stuff = emit_result.Diagnostics;
 
-                    //var invald_string = new_sourceCode.Substring(start, length);
-                    //Console.WriteLine(invald_string);
-                    //Console.ReadLine();
+                var diagnostics = emit_result.Diagnostics.ToList();
+                diagnostics.ForEach(diagnostic =>
+                {
+                    //var info = diagnostic.ToString();
+
+                    //var start = diagnostic.Location.SourceSpan.End;
+                    //var length = diagnostic.Location.SourceSpan.Length;
+                    //var error_substring = new_sourceCode.Substring(start, length);
+                    //Console.WriteLine(error_substring + "\n");
 
                     var error_location = diagnostic.Location.SourceSpan.Start;
                     if (new_sourceCode[error_location] == ')')
@@ -67,8 +70,30 @@ namespace RoslynCompiler
                         error_location++;
                     }
                     new_sourceCode = new_sourceCode.Insert(error_location, ";");
-                    var code = new_sourceCode;
                 });
+
+                #region OLD
+                //diagonstic_list.ForEach(diagnostic =>
+                //{
+                //    var source_span = diagnostic.Location.SourceSpan;
+                //    var line_span = diagnostic.Location.GetLineSpan().Span;
+                //    var start = source_span.Start;
+                //    var length = source_span.Length;
+                //    var end = source_span.End;
+
+                //    //var invald_string = new_sourceCode.Substring(start, length);
+                //    //Console.WriteLine(invald_string);
+                //    //Console.ReadLine();
+
+                //    var error_location = diagnostic.Location.SourceSpan.Start;
+                //    if (new_sourceCode[error_location] == ')')
+                //    {
+                //        error_location++;
+                //    }
+                //    new_sourceCode = new_sourceCode.Insert(error_location, ";");
+                //    var code = new_sourceCode;
+                //}); 
+                #endregion
 
                 CompileScript(new_sourceCode);
                 _script?.RunAsync();

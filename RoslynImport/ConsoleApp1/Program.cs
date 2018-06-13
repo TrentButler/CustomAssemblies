@@ -15,18 +15,27 @@ namespace ConsoleApp1
             //string code = "var lib = new Class1(); System.Console.WriteLine(\"DO WORK \" + lib.ToString()); System.Console.ReadLine();";
             //RoslynCompiler.RoslynWrapper.Execute<object>(code, assembly_path, new List<string>() { "ALibrary.dll" });
 
-            string code = "var stuff = 1" +
-                "System.Console.WriteLine(\"DO WORK \")" +
-                "System.Console.ReadLine()";
+            //string code = "var stuff = 1" +
+            //    "System.Console.WriteLine(\"DO WORK \")" +
+            //    "System.Console.ReadLine()";
 
 
-            //string code = "public class CustomClass {" +
-            //    "public string myData " +
-            //    "public CustomClass(string data) {myData = data} }" +
+            //string code = "public class CustomClass" +
+            //    "{" +
+            //    "public string myData" +
+            //    "public CustomClass(string data)" +
+            //    "{" +
+            //    "myData = data" +
+            //    "}" +
+            //    "}" +
             //    "var custom_class = new CustomClass(\"Hello Roslyn\")" +
             //    "System.Console.WriteLine(custom_class.myData)" +
             //    "System.Console.ReadLine()";
 
+            string code = "var a = \"hello\" " +
+                "var b = \"world\" " +
+                "System.Console.WriteLine((a + b).Length) " +
+                "System.Console.ReadLine() ";
 
             RoslynCompiler.RoslynWrapper.Execute(code);
         }
