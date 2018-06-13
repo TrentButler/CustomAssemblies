@@ -13,36 +13,39 @@ namespace RoslynCompiler
 {
     public class RoslynWrapper : Object
     {
-        private static Script _script;
-
         public static async Task<T> Evaluate<T>(string sourceCode, object o)
         {
             T s = await CSharpScript.EvaluateAsync<T>(sourceCode, globals: o);
             return s;
         }
-
-        private static void CreateScript(string sourceCode)
+        public static async Task<T> Evaluate<T>(string sourceCode)
         {
-            _script = CSharpScript.Create(sourceCode);
+            T s = await CSharpScript.EvaluateAsync<T>(sourceCode);
+            return s;
         }
-        public static void CompileScript(string sourceCode)
+        public static async Task<T> SIMPLE_Evaluate<T>(string sourceCode)
         {
-            CreateScript(sourceCode);
+            var new_sourceCode = sourceCode.Replace('\n', ';');
+            T s = await CSharpScript.EvaluateAsync<T>(new_sourceCode);
+            return s;
+        }
+
+        public static void SIMPLE_Execute(string sourceCode)
+        {
+            var new_sourceCode = sourceCode.Replace('\n', ';');
+            var _script = CSharpScript.Create(new_sourceCode);
             _script?.Compile();
+            _script?.RunAsync();
         }
-        public static async void RunScript()
+        public static void AUTOFIX_Execute(string sourceCode)
         {
-            var run = await _script?.RunAsync();
-        }
-
-        public static void Execute(string sourceCode)
-        {
-            CreateScript(sourceCode);
+            var _script = CSharpScript.Create(sourceCode);
             var new_sourceCode = sourceCode;
 
             try
             {
-                CompileScript(new_sourceCode);
+                _script = CSharpScript.Create(new_sourceCode);
+                _script?.Compile();
                 _script?.RunAsync();
             }
             catch (CompilationErrorException e) when (e.Message.Contains("error CS1002: ; expected"))
@@ -55,21 +58,40 @@ namespace RoslynCompiler
                 var stuff = emit_result.Diagnostics;
 
                 var diagnostics = emit_result.Diagnostics.ToList();
+                var error_strings = new List<string>();
                 diagnostics.ForEach(diagnostic =>
                 {
-                    //var info = diagnostic.ToString();
+                    var suppression_info = diagnostic.GetSuppressionInfo(compilation);
+                    var suppression_attribute = suppression_info.Attribute;
+                    var application_syntax_reference = suppression_attribute.ApplicationSyntaxReference;
+                    var syntax = application_syntax_reference.GetSyntax();
+                    var full_span = syntax.FullSpan.ToString();
+                    var code = full_span;
 
-                    //var start = diagnostic.Location.SourceSpan.End;
+
+                    #region OLD
+                    //var info = diagnostic.ToString();
+                    //var info_tuple = info.Substring(0, 6);
+                    //var trimmed_info = info_tuple.Trim('(', ')');
+                    //var split_info = trimmed_info.Split(',');
+                    //var error_index = Int32.Parse(split_info[1]);
+
+                    //var start = diagnostic.Location.SourceSpan.Start;
+                    //var end = diagnostic.Location.SourceSpan.End;
                     //var length = diagnostic.Location.SourceSpan.Length;
                     //var error_substring = new_sourceCode.Substring(start, length);
-                    //Console.WriteLine(error_substring + "\n");
+                    //error_strings.Add(error_substring);
 
-                    var error_location = diagnostic.Location.SourceSpan.Start;
-                    if (new_sourceCode[error_location] == ')')
-                    {
-                        error_location++;
-                    }
-                    new_sourceCode = new_sourceCode.Insert(error_location, ";");
+
+                    //var error_location = diagnostic.Location.SourceSpan.Start;
+                    //if (new_sourceCode[error_location] == ')')
+                    //{
+                    //    error_location++;
+                    //}
+                    //new_sourceCode = new_sourceCode.Insert(error_index-1, ";");
+                    //var code = new_sourceCode;
+                    //new_sourceCode = new_sourceCode.Insert(error_location, ";"); 
+                    #endregion
                 });
 
                 #region OLD
@@ -95,7 +117,8 @@ namespace RoslynCompiler
                 //}); 
                 #endregion
 
-                CompileScript(new_sourceCode);
+                _script = CSharpScript.Create(new_sourceCode);
+                _script?.Compile();
                 _script?.RunAsync();
             }
         }

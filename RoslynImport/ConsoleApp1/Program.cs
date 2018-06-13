@@ -32,12 +32,12 @@ namespace ConsoleApp1
             //    "System.Console.WriteLine(custom_class.myData)" +
             //    "System.Console.ReadLine()";
 
-            string code = "var a = \"hello\" " +
-                "var b = \"world\" " +
-                "System.Console.WriteLine((a + b).Length) " +
-                "System.Console.ReadLine() ";
+            string code = "var a = \"hello\"\n" +
+                "var b = \"world\"\n" +
+                "System.Console.WriteLine((a + b).Length)\n" +
+                "System.Console.ReadLine()\n";
 
-            RoslynCompiler.RoslynWrapper.Execute(code);
+            RoslynCompiler.RoslynWrapper.SIMPLE_Execute(code);
         }
     }
 }
