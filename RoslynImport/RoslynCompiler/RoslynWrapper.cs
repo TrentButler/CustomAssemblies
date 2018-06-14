@@ -46,10 +46,12 @@ namespace RoslynCompiler
             }
             else
             {
-                new_sourceCode = sourceCode;
+                new_sourceCode = sourceCode;                
             }
 
-            T s = await CSharpScript.EvaluateAsync<T>(new_sourceCode, null, typeof(Vector3));
+            Globals globals = new Globals();
+
+            T s = await CSharpScript.EvaluateAsync<T>(new_sourceCode, null, globals);
             return s;
         }
         public static async Task<T> _Evaluate<T>(string sourceCode)
