@@ -49,6 +49,22 @@ namespace RoslynCompiler
                 new_sourceCode = sourceCode;
             }
 
+            T s = await CSharpScript.EvaluateAsync<T>(new_sourceCode, null, typeof(Vector3));
+            return s;
+        }
+        public static async Task<T> _Evaluate<T>(string sourceCode)
+        {
+            //IGNORE EMPTY STRINGS -> ""
+            //IGNORE CLASS DECLARATIONS -> class
+            //IGNORE SCOPE OPERATORS -> { }
+
+            var new_sourceCode = string.Empty;
+            var newLine_split_code = sourceCode.Split('\n');
+            foreach(var newLine_string in newLine_split_code)
+            {
+                var newLine = newLine_string;
+            }            
+
             T s = await CSharpScript.EvaluateAsync<T>(new_sourceCode);
             return s;
         }

@@ -20,30 +20,35 @@ namespace ConsoleApp1
             //    "System.Console.ReadLine()";
 
 
-            //string code = "public class CustomClass" +
-            //    "{" +
-            //    "public string myData" +
-            //    "public CustomClass(string data)" +
-            //    "{" +
-            //    "myData = data" +
-            //    "}" +
-            //    "}" +
-            //    "var custom_class = new CustomClass(\"Hello Roslyn\")" +
-            //    "System.Console.WriteLine(custom_class.myData)" +
-            //    "System.Console.ReadLine()";
+            //string code = "public class CustomClass\n" +
+            //    "{\n" +
+            //    "public string myData\n" +
+            //    "public CustomClass(string data)\n" +
+            //    "{\n" +
+            //    "myData = data\n" +
+            //    "}\n" +
+            //    "}\n" +
+            //    "var custom_class = new CustomClass(\"Hello Roslyn\")\n" +
+            //    "System.Console.WriteLine(custom_class.myData)\n" +
+            //    "System.Console.ReadLine()\n";
 
-            string code = "#" +
-                "var a = \"hello\"\n" +
-                "var b = \"world\"\n" +
-                "System.Console.WriteLine((a + b).Length)\n" +
-                "System.Console.ReadLine()" +
-                "#";
+            //string code = "#" +
+            //    "var a = \"hello\"\n" +
+            //    "var b = \"world\"\n" +
+            //    "System.Console.WriteLine((a + b).Length)\n" +
+            //    "System.Console.ReadLine()" +
+            //    "#";
 
             //string code =
             //    "var a = \"hello\";" +
             //    "var b = \"world\";" +
             //    "System.Console.WriteLine((a + b).Length);" +
             //    "System.Console.ReadLine();";
+
+            string code =
+                "var a = Vector3.up;" +
+                "System.Console.WriteLine(a.ToString());" +
+                "System.Console.ReadLine();";
 
             var result = RoslynCompiler.RoslynWrapper.Evaluate<object>(code).Result;
             //RoslynCompiler.RoslynWrapper.SIMPLE_Execute(code);
