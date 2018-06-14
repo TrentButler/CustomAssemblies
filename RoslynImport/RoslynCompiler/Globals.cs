@@ -1,4 +1,5 @@
-﻿namespace RoslynCompiler
+﻿using System;
+namespace RoslynCompiler
 {
     public class Globals
     {
