@@ -22,87 +22,105 @@ namespace RoslynCompiler
         }
         public static async Task<T> Evaluate<T>(string sourceCode)
         {
+            var add_hashtag_start = sourceCode.Insert(0, "#");
+            var add_hashtag_end = add_hashtag_start.Insert(add_hashtag_start.Length, "\n#");
+            var start_sourceCode = add_hashtag_end;
             var new_sourceCode = "";
 
-            var newLine_split_code = sourceCode.Split('\n').ToList();
-            for (int i = 0; i < newLine_split_code.Count; i++)
+            var split_by_hastag = start_sourceCode.Split('#').ToList();
+            foreach (var hastag_split in split_by_hastag)
             {
-                if (newLine_split_code[i] == "") //IGNORE EMPTY STRINGS -> ""
+                if (hastag_split is "")
                 {
                     continue;
                 }
 
-                if (newLine_split_code[i].StartsWith("//")) //IGNORE STRINGS THAT START WITH "//"
+                var newLine_split_code = hastag_split.Split('\n').ToList();
+                for (int i = 0; i < newLine_split_code.Count; i++)
                 {
-                    new_sourceCode += newLine_split_code[i];
-                    continue;
-                }
-
-                if (newLine_split_code[i].Contains(" class ")) //IGNORE CLASS DECLARATIONS -> class
-                {
-                    new_sourceCode += newLine_split_code[i];
-                    continue;
-                }
-
-                if (newLine_split_code[i].Contains("get") || newLine_split_code[i].Contains("set"))
-                {
-                    var needs_format = newLine_split_code[i];
-                    var scopeOperator_split = newLine_split_code[i].Split('{', '}');
-                    foreach (var split in scopeOperator_split)
+                    if (newLine_split_code.Contains(";"))
                     {
-                        if (split == "")
-                        {
-                            continue;
-                        }
-
-                        if (split.Contains("return"))
-                        {
-                            var proptery_return = split.Insert(split.Length, ";");
-                            needs_format = needs_format.Replace(split, proptery_return);
-                            continue;
-                        }
-                        if (split.Contains("="))
-                        {
-                            var proptery_assignment = split.Insert(split.Length, ";");
-                            needs_format = needs_format.Replace(split, proptery_assignment);
-                            continue;
-                        }
-                        if (split.Contains("get") && split.Contains("set"))
-                        {
-                            var auto_proptery_get = "get;";
-                            var auto_propter_set = "set;";
-                            needs_format = needs_format.Replace("get", auto_proptery_get);
-                            needs_format = needs_format.Replace("set", auto_propter_set);
-                            continue;
-                        }
+                        new_sourceCode += newLine_split_code;
+                        continue;
                     }
 
-                    new_sourceCode += needs_format;
-                    continue;
-                }
-
-                if (newLine_split_code[i].Contains("{") || newLine_split_code[i].Contains("}")) //IGNORE SCOPE OPERATORS -> { }
-                {
-                    new_sourceCode += newLine_split_code[i];
-                    continue;
-                }
-
-                else
-                {
-                    var next_line = newLine_split_code[i + 1];
-                    if (next_line != null)
+                    if (newLine_split_code[i] == "") //IGNORE EMPTY STRINGS -> ""
                     {
-                        if (next_line.Contains("{"))
+                        continue;
+                    }
+
+                    if (newLine_split_code[i].StartsWith("//")) //IGNORE STRINGS THAT START WITH "//"
+                    {
+                        new_sourceCode += newLine_split_code[i];
+                        continue;
+                    }
+
+                    if (newLine_split_code[i].Contains(" class ")) //IGNORE CLASS DECLARATIONS -> class
+                    {
+                        new_sourceCode += newLine_split_code[i];
+                        continue;
+                    }
+
+                    if (newLine_split_code[i].Contains("get") || newLine_split_code[i].Contains("set"))
+                    {
+                        var needs_format = newLine_split_code[i];
+                        var scopeOperator_split = newLine_split_code[i].Split('{', '}');
+                        foreach (var split in scopeOperator_split)
                         {
-                            new_sourceCode += newLine_split_code[i];
-                            continue;
+                            if (split == "")
+                            {
+                                continue;
+                            }
+
+                            if (split.Contains("return"))
+                            {
+                                var proptery_return = split.Insert(split.Length, ";");
+                                needs_format = needs_format.Replace(split, proptery_return);
+                                continue;
+                            }
+                            if (split.Contains("="))
+                            {
+                                var proptery_assignment = split.Insert(split.Length, ";");
+                                needs_format = needs_format.Replace(split, proptery_assignment);
+                                continue;
+                            }
+                            if (split.Contains("get") && split.Contains("set"))
+                            {
+                                var auto_proptery_get = "get;";
+                                var auto_propter_set = "set;";
+                                needs_format = needs_format.Replace("get", auto_proptery_get);
+                                needs_format = needs_format.Replace("set", auto_propter_set);
+                                continue;
+                            }
                         }
-                        else
+
+                        new_sourceCode += needs_format;
+                        continue;
+                    }
+
+                    if (newLine_split_code[i].Contains("{") || newLine_split_code[i].Contains("}")) //IGNORE SCOPE OPERATORS -> { }
+                    {
+                        new_sourceCode += newLine_split_code[i];
+                        continue;
+                    }
+
+                    else
+                    {
+                        var next_line = newLine_split_code[i + 1];
+                        if (next_line != null)
                         {
-                            var needs_format = newLine_split_code[i];
-                            needs_format = needs_format.Insert(needs_format.Length, ";");
-                            new_sourceCode += needs_format;
-                            continue;
+                            if (next_line.Contains("{"))
+                            {
+                                new_sourceCode += newLine_split_code[i];
+                                continue;
+                            }
+                            else
+                            {
+                                var needs_format = newLine_split_code[i];
+                                needs_format = needs_format.Insert(needs_format.Length, ";");
+                                new_sourceCode += needs_format;
+                                continue;
+                            }
                         }
                     }
                 }
@@ -112,95 +130,235 @@ namespace RoslynCompiler
             T s = await CSharpScript.EvaluateAsync<T>(new_sourceCode, null, globals);
             return s;
         }
-
-        public static void Execute(string sourceCode)
+        public static async Task<T> Evaluate<T>(string sourceCode, List<Type> assembly_refrences, List<string> imports)
         {
-            var new_sourceCode = "";
-            var newLine_split_code = sourceCode.Split('\n').ToList();
-            for (int i = 0; i < newLine_split_code.Count; i++)
+            ScriptOptions options = ScriptOptions.Default;
+
+            assembly_refrences.ForEach(refrence =>
             {
-                if (newLine_split_code[i] == "") //IGNORE EMPTY STRINGS -> ""
+                options = options.AddReferences(new List<Assembly>() { refrence?.Assembly });
+            });
+
+            options.AddImports(imports);
+
+            var add_hashtag_start = sourceCode.Insert(0, "#");
+            var add_hashtag_end = add_hashtag_start.Insert(add_hashtag_start.Length, "\n#");
+            var start_sourceCode = add_hashtag_end;
+            var new_sourceCode = "";
+
+            var split_by_hastag = start_sourceCode.Split('#').ToList();
+            foreach (var hastag_split in split_by_hastag)
+            {
+                if (hastag_split is "")
                 {
                     continue;
                 }
 
-                if (newLine_split_code[i].StartsWith("//")) //IGNORE STRINGS THAT START WITH "//"
+                var newLine_split_code = hastag_split.Split('\n').ToList();
+                for (int i = 0; i < newLine_split_code.Count; i++)
                 {
-                    new_sourceCode += newLine_split_code[i];
-                    continue;
-                }
-
-                if (newLine_split_code[i].Contains(" class ")) //IGNORE CLASS DECLARATIONS -> class
-                {
-                    new_sourceCode += newLine_split_code[i];
-                    continue;
-                }
-
-                if (newLine_split_code[i].Contains("get") || newLine_split_code[i].Contains("set"))
-                {
-                    var needs_format = newLine_split_code[i];
-                    var scopeOperator_split = newLine_split_code[i].Split('{', '}');
-                    foreach (var split in scopeOperator_split)
+                    if (newLine_split_code.Contains(";"))
                     {
-                        if (split == "")
-                        {
-                            continue;
-                        }
-
-                        if (split.Contains("return"))
-                        {
-                            var proptery_return = split.Insert(split.Length, ";");
-                            needs_format = needs_format.Replace(split, proptery_return);
-                            continue;
-                        }
-                        if (split.Contains("="))
-                        {
-                            var proptery_assignment = split.Insert(split.Length, ";");
-                            needs_format = needs_format.Replace(split, proptery_assignment);
-                            continue;
-                        }
-                        if (split.Contains("get") && split.Contains("set"))
-                        {
-                            var auto_proptery_get = "get;";
-                            var auto_propter_set = "set;";
-                            needs_format = needs_format.Replace("get", auto_proptery_get);
-                            needs_format = needs_format.Replace("set", auto_propter_set);
-                            continue;
-                        }
+                        new_sourceCode += newLine_split_code;
+                        continue;
                     }
 
-                    new_sourceCode += needs_format;
-                    continue;
-                }
-
-                if (newLine_split_code[i].Contains("{") || newLine_split_code[i].Contains("}")) //IGNORE SCOPE OPERATORS -> { }
-                {
-                    new_sourceCode += newLine_split_code[i];
-                    continue;
-                }
-
-                else
-                {
-                    var next_line = newLine_split_code[i + 1];
-                    if (next_line != null)
+                    if (newLine_split_code[i] == "") //IGNORE EMPTY STRINGS -> ""
                     {
-                        if (next_line.Contains("{"))
+                        continue;
+                    }
+
+                    if (newLine_split_code[i].StartsWith("//")) //IGNORE STRINGS THAT START WITH "//"
+                    {
+                        new_sourceCode += newLine_split_code[i];
+                        continue;
+                    }
+
+                    if (newLine_split_code[i].Contains(" class ")) //IGNORE CLASS DECLARATIONS -> class
+                    {
+                        new_sourceCode += newLine_split_code[i];
+                        continue;
+                    }
+
+                    if (newLine_split_code[i].Contains("get") || newLine_split_code[i].Contains("set"))
+                    {
+                        var needs_format = newLine_split_code[i];
+                        var scopeOperator_split = newLine_split_code[i].Split('{', '}');
+                        foreach (var split in scopeOperator_split)
                         {
-                            new_sourceCode += newLine_split_code[i];
-                            continue;
+                            if (split == "")
+                            {
+                                continue;
+                            }
+
+                            if (split.Contains("return"))
+                            {
+                                var proptery_return = split.Insert(split.Length, ";");
+                                needs_format = needs_format.Replace(split, proptery_return);
+                                continue;
+                            }
+                            if (split.Contains("="))
+                            {
+                                var proptery_assignment = split.Insert(split.Length, ";");
+                                needs_format = needs_format.Replace(split, proptery_assignment);
+                                continue;
+                            }
+                            if (split.Contains("get") && split.Contains("set"))
+                            {
+                                var auto_proptery_get = "get;";
+                                var auto_propter_set = "set;";
+                                needs_format = needs_format.Replace("get", auto_proptery_get);
+                                needs_format = needs_format.Replace("set", auto_propter_set);
+                                continue;
+                            }
                         }
-                        else
+
+                        new_sourceCode += needs_format;
+                        continue;
+                    }
+
+                    if (newLine_split_code[i].Contains("{") || newLine_split_code[i].Contains("}")) //IGNORE SCOPE OPERATORS -> { }
+                    {
+                        new_sourceCode += newLine_split_code[i];
+                        continue;
+                    }
+
+                    else
+                    {
+                        var next_line = newLine_split_code[i + 1];
+                        if (next_line != null)
                         {
-                            var needs_format = newLine_split_code[i];
-                            needs_format = needs_format.Insert(needs_format.Length, ";");
-                            new_sourceCode += needs_format;
-                            continue;
+                            if (next_line.Contains("{"))
+                            {
+                                new_sourceCode += newLine_split_code[i];
+                                continue;
+                            }
+                            else
+                            {
+                                var needs_format = newLine_split_code[i];
+                                needs_format = needs_format.Insert(needs_format.Length, ";");
+                                new_sourceCode += needs_format;
+                                continue;
+                            }
                         }
                     }
                 }
             }
 
-            CSharpScript.RunAsync(new_sourceCode);
+            Globals globals = new Globals();
+            T s = await CSharpScript.EvaluateAsync<T>(new_sourceCode, options, globals);
+            return s;
+        }
+
+        public static void Execute(string sourceCode)
+        {
+            var add_hashtag_start = sourceCode.Insert(0, "#");
+            var add_hashtag_end = add_hashtag_start.Insert(add_hashtag_start.Length, "\n#");
+            var start_sourceCode = add_hashtag_end;
+            var new_sourceCode = "";
+
+            var split_by_hastag = start_sourceCode.Split('#').ToList();
+            foreach (var hastag_split in split_by_hastag)
+            {
+                if (hastag_split is "")
+                {
+                    continue;
+                }
+
+                var newLine_split_code = hastag_split.Split('\n').ToList();
+                for (int i = 0; i < newLine_split_code.Count; i++)
+                {
+                    if (newLine_split_code.Contains(";"))
+                    {
+                        new_sourceCode += newLine_split_code;
+                        continue;
+                    }
+
+                    if (newLine_split_code[i] == "") //IGNORE EMPTY STRINGS -> ""
+                    {
+                        continue;
+                    }
+
+                    if (newLine_split_code[i].StartsWith("//")) //IGNORE STRINGS THAT START WITH "//"
+                    {
+                        new_sourceCode += newLine_split_code[i];
+                        continue;
+                    }
+
+                    if (newLine_split_code[i].Contains(" class ")) //IGNORE CLASS DECLARATIONS -> class
+                    {
+                        new_sourceCode += newLine_split_code[i];
+                        continue;
+                    }
+
+                    if (newLine_split_code[i].Contains("get") || newLine_split_code[i].Contains("set"))
+                    {
+                        var needs_format = newLine_split_code[i];
+                        var scopeOperator_split = newLine_split_code[i].Split('{', '}');
+                        foreach (var split in scopeOperator_split)
+                        {
+                            if (split == "")
+                            {
+                                continue;
+                            }
+
+                            if (split.Contains("return"))
+                            {
+                                var proptery_return = split.Insert(split.Length, ";");
+                                needs_format = needs_format.Replace(split, proptery_return);
+                                continue;
+                            }
+                            if (split.Contains("="))
+                            {
+                                var proptery_assignment = split.Insert(split.Length, ";");
+                                needs_format = needs_format.Replace(split, proptery_assignment);
+                                continue;
+                            }
+                            if (split.Contains("get") && split.Contains("set"))
+                            {
+                                var auto_proptery_get = "get;";
+                                var auto_propter_set = "set;";
+                                needs_format = needs_format.Replace("get", auto_proptery_get);
+                                needs_format = needs_format.Replace("set", auto_propter_set);
+                                continue;
+                            }
+                        }
+
+                        new_sourceCode += needs_format;
+                        continue;
+                    }
+
+                    if (newLine_split_code[i].Contains("{") || newLine_split_code[i].Contains("}")) //IGNORE SCOPE OPERATORS -> { }
+                    {
+                        new_sourceCode += newLine_split_code[i];
+                        continue;
+                    }
+
+                    else
+                    {
+                        var next_line = newLine_split_code[i + 1];
+                        if (next_line != null)
+                        {
+                            if (next_line.Contains("{"))
+                            {
+                                new_sourceCode += newLine_split_code[i];
+                                continue;
+                            }
+                            else
+                            {
+                                var needs_format = newLine_split_code[i];
+                                needs_format = needs_format.Insert(needs_format.Length, ";");
+                                new_sourceCode += needs_format;
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+
+            Globals globals = new Globals();
+
+            CSharpScript.RunAsync(new_sourceCode, null, globals);
         }
         public static void Execute(string sourceCode, List<Type> assembly_refrences, List<string> imports)
         {

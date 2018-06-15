@@ -71,17 +71,19 @@ namespace ConsoleApp1
                 "{\n" +
                 "return output + \"myFunc\"\n" +
                 "}\n" +
-                "var output = myFunc(\"INVOKE \")\n" +
+                "var output = myFunc(\"INVOKE \");\n" +
                 "System.Console.WriteLine(output)\n" +
                 "var custom_class = new CustomClass(\"Hello Roslyn\")\n" +
                 "System.Console.WriteLine(custom_class.myData)\n" +
-                "System.Console.ReadLine()\n" +
-                "return output\n";
+                "var input = System.Console.ReadLine()\n" +
+                "return output + input";
 
             var result = RoslynCompiler.RoslynWrapper.Evaluate<string>(code);
             var made_it = result.Result;
-            //RoslynCompiler.RoslynWrapper.Execute(code);
 
+            Console.WriteLine(string.Format("ROSLYN COMPILE RESULT -> {0}", made_it.ToString()));
+            Console.ReadLine();
+            //RoslynCompiler.RoslynWrapper.Execute(code);
         }
     }
 }
