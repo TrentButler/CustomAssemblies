@@ -130,11 +130,11 @@ namespace RoslynCompiler
             T s = await CSharpScript.EvaluateAsync<T>(new_sourceCode, null, globals);
             return s;
         }
-        public static async Task<T> Evaluate<T>(string sourceCode, List<Type> assembly_refrences, List<string> imports)
+        public static async Task<T> Evaluate<T>(string sourceCode, object globals, List<Type> assembly_references, List<string> imports)
         {
             ScriptOptions options = ScriptOptions.Default;
 
-            assembly_refrences.ForEach(refrence =>
+            assembly_references.ForEach(refrence =>
             {
                 options = options.AddReferences(new List<Assembly>() { refrence?.Assembly });
             });
@@ -244,8 +244,7 @@ namespace RoslynCompiler
                     }
                 }
             }
-
-            Globals globals = new Globals();
+            
             T s = await CSharpScript.EvaluateAsync<T>(new_sourceCode, options, globals);
             return s;
         }
