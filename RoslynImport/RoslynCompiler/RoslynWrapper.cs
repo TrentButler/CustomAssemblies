@@ -15,13 +15,19 @@ namespace RoslynCompiler
 {
     public class RoslynWrapper
     {
-        public static async Task<T> Evaluate<T>(string sourceCode, object globals)
+        private string _target_code;
+        private string _output_code;
+
+        public RoslynWrapper()
         {
-            T s = await CSharpScript.EvaluateAsync<T>(sourceCode, globals: globals);
-            return s;
+            this._target_code = string.Empty;
+            this._output_code = string.Empty;
         }
-        public static async Task<T> Evaluate<T>(string sourceCode)
+        
+
+        private void ParseSourceCode()
         {
+            var sourceCode = this._target_code;
             var add_hashtag_start = sourceCode.Insert(0, "#");
             var add_hashtag_end = add_hashtag_start.Insert(add_hashtag_start.Length, "\n#");
             var start_sourceCode = add_hashtag_end;
@@ -125,6 +131,177 @@ namespace RoslynCompiler
                     }
                 }
             }
+
+            this._output_code = new_sourceCode;
+        }
+
+        private static Thread ParseCode(string sourceCode)
+        {
+            //this._target_code = sourceCode;
+            //var child_thread = new ThreadStart(ParseSourceCode);
+            //var thread = new Thread(child_thread);
+            //thread.Start();
+
+            var thread = new Thread(() => ParseSourceCode(ref sourceCode));
+            thread.Start();
+            return thread;
+        }
+
+        public async Task<T> Evaluate<T>(string sourceCode, List<Type> assembly_references, List<string> imports)
+        {
+            ScriptOptions options = ScriptOptions.Default;
+
+            assembly_references.ForEach(refrence =>
+            {
+                options = options.AddReferences(new List<Assembly>() { refrence?.Assembly });
+            });
+
+            options.AddImports(imports);
+
+            //this.ParseCode(sourceCode);
+
+            T s = await CSharpScript.EvaluateAsync<T>(this._output_code, options);
+            return s;
+        }
+
+        public void Execute(string sourceCode, List<Type> assembly_references, List<string> imports)
+        {
+            ScriptOptions options = ScriptOptions.Default;
+
+            assembly_references.ForEach(refrence =>
+            {
+                options = options.AddReferences(new List<Assembly>() { refrence?.Assembly });
+            });
+
+            options.AddImports(imports);
+
+            //this.ParseCode(sourceCode);
+
+            CSharpScript.RunAsync(this._output_code, options);
+        }
+
+        #region STATIC_METHODS
+        private static void ParseSourceCode(ref string source)
+        {
+            var sourceCode = source as string;
+            var add_hashtag_start = sourceCode.Insert(0, "#");
+            var add_hashtag_end = add_hashtag_start.Insert(add_hashtag_start.Length, "\n#");
+            var start_sourceCode = add_hashtag_end;
+            var new_sourceCode = "";
+
+            var split_by_hastag = start_sourceCode.Split('#').ToList();
+            foreach (var hastag_split in split_by_hastag)
+            {
+                if (hastag_split is "")
+                {
+                    continue;
+                }
+
+                var newLine_split_code = hastag_split.Split('\n').ToList();
+                for (int i = 0; i < newLine_split_code.Count; i++)
+                {
+                    if (newLine_split_code.Contains(";"))
+                    {
+                        new_sourceCode += newLine_split_code;
+                        continue;
+                    }
+
+                    if (newLine_split_code[i] == "") //IGNORE EMPTY STRINGS -> ""
+                    {
+                        continue;
+                    }
+
+                    if (newLine_split_code[i].StartsWith("//")) //IGNORE STRINGS THAT START WITH "//"
+                    {
+                        new_sourceCode += newLine_split_code[i];
+                        continue;
+                    }
+
+                    if (newLine_split_code[i].Contains(" class ")) //IGNORE CLASS DECLARATIONS -> class
+                    {
+                        new_sourceCode += newLine_split_code[i];
+                        continue;
+                    }
+
+                    if (newLine_split_code[i].Contains("get") || newLine_split_code[i].Contains("set"))
+                    {
+                        var needs_format = newLine_split_code[i];
+                        var scopeOperator_split = newLine_split_code[i].Split('{', '}');
+                        foreach (var split in scopeOperator_split)
+                        {
+                            if (split == "")
+                            {
+                                continue;
+                            }
+
+                            if (split.Contains("return"))
+                            {
+                                var proptery_return = split.Insert(split.Length, ";");
+                                needs_format = needs_format.Replace(split, proptery_return);
+                                continue;
+                            }
+                            if (split.Contains("="))
+                            {
+                                var proptery_assignment = split.Insert(split.Length, ";");
+                                needs_format = needs_format.Replace(split, proptery_assignment);
+                                continue;
+                            }
+                            if (split.Contains("get") && split.Contains("set"))
+                            {
+                                var auto_proptery_get = "get;";
+                                var auto_propter_set = "set;";
+                                needs_format = needs_format.Replace("get", auto_proptery_get);
+                                needs_format = needs_format.Replace("set", auto_propter_set);
+                                continue;
+                            }
+                        }
+
+                        new_sourceCode += needs_format;
+                        continue;
+                    }
+
+                    if (newLine_split_code[i].Contains("{") || newLine_split_code[i].Contains("}")) //IGNORE SCOPE OPERATORS -> { }
+                    {
+                        new_sourceCode += newLine_split_code[i];
+                        continue;
+                    }
+
+                    else
+                    {
+                        var next_line = newLine_split_code[i + 1];
+                        if (next_line != null)
+                        {
+                            if (next_line.Contains("{"))
+                            {
+                                new_sourceCode += newLine_split_code[i];
+                                continue;
+                            }
+                            else
+                            {
+                                var needs_format = newLine_split_code[i];
+                                needs_format = needs_format.Insert(needs_format.Length, ";");
+                                new_sourceCode += needs_format;
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+
+            source = new_sourceCode;
+        }
+
+        public static async Task<T> Evaluate<T>(string sourceCode, object globals)
+        {
+            T s = await CSharpScript.EvaluateAsync<T>(sourceCode, globals: globals);
+            return s;
+        }
+        public static async Task<T> Evaluate<T>(string sourceCode)
+        {
+            var new_sourceCode = sourceCode;
+
+            //MULTI-THREAD THIS
+            var t = ParseCode(new_sourceCode);
 
             Globals globals = new Globals();
             T s = await CSharpScript.EvaluateAsync<T>(new_sourceCode, null, globals);
@@ -141,219 +318,22 @@ namespace RoslynCompiler
 
             options.AddImports(imports);
 
-            var add_hashtag_start = sourceCode.Insert(0, "#");
-            var add_hashtag_end = add_hashtag_start.Insert(add_hashtag_start.Length, "\n#");
-            var start_sourceCode = add_hashtag_end;
-            var new_sourceCode = "";
+            var new_sourceCode = sourceCode;
 
-            var split_by_hastag = start_sourceCode.Split('#').ToList();
-            foreach (var hastag_split in split_by_hastag)
-            {
-                if (hastag_split is "")
-                {
-                    continue;
-                }
+            //MULTI-THREAD THIS
+            //ParseSourceCode(ref new_sourceCode);
+            var t = ParseCode(new_sourceCode);
 
-                var newLine_split_code = hastag_split.Split('\n').ToList();
-                for (int i = 0; i < newLine_split_code.Count; i++)
-                {
-                    if (newLine_split_code.Contains(";"))
-                    {
-                        new_sourceCode += newLine_split_code;
-                        continue;
-                    }
-
-                    if (newLine_split_code[i] == "") //IGNORE EMPTY STRINGS -> ""
-                    {
-                        continue;
-                    }
-
-                    if (newLine_split_code[i].StartsWith("//")) //IGNORE STRINGS THAT START WITH "//"
-                    {
-                        new_sourceCode += newLine_split_code[i];
-                        continue;
-                    }
-
-                    if (newLine_split_code[i].Contains(" class ")) //IGNORE CLASS DECLARATIONS -> class
-                    {
-                        new_sourceCode += newLine_split_code[i];
-                        continue;
-                    }
-
-                    if (newLine_split_code[i].Contains("get") || newLine_split_code[i].Contains("set"))
-                    {
-                        var needs_format = newLine_split_code[i];
-                        var scopeOperator_split = newLine_split_code[i].Split('{', '}');
-                        foreach (var split in scopeOperator_split)
-                        {
-                            if (split == "")
-                            {
-                                continue;
-                            }
-
-                            if (split.Contains("return"))
-                            {
-                                var proptery_return = split.Insert(split.Length, ";");
-                                needs_format = needs_format.Replace(split, proptery_return);
-                                continue;
-                            }
-                            if (split.Contains("="))
-                            {
-                                var proptery_assignment = split.Insert(split.Length, ";");
-                                needs_format = needs_format.Replace(split, proptery_assignment);
-                                continue;
-                            }
-                            if (split.Contains("get") && split.Contains("set"))
-                            {
-                                var auto_proptery_get = "get;";
-                                var auto_propter_set = "set;";
-                                needs_format = needs_format.Replace("get", auto_proptery_get);
-                                needs_format = needs_format.Replace("set", auto_propter_set);
-                                continue;
-                            }
-                        }
-
-                        new_sourceCode += needs_format;
-                        continue;
-                    }
-
-                    if (newLine_split_code[i].Contains("{") || newLine_split_code[i].Contains("}")) //IGNORE SCOPE OPERATORS -> { }
-                    {
-                        new_sourceCode += newLine_split_code[i];
-                        continue;
-                    }
-
-                    else
-                    {
-                        var next_line = newLine_split_code[i + 1];
-                        if (next_line != null)
-                        {
-                            if (next_line.Contains("{"))
-                            {
-                                new_sourceCode += newLine_split_code[i];
-                                continue;
-                            }
-                            else
-                            {
-                                var needs_format = newLine_split_code[i];
-                                needs_format = needs_format.Insert(needs_format.Length, ";");
-                                new_sourceCode += needs_format;
-                                continue;
-                            }
-                        }
-                    }
-                }
-            }
-            
             T s = await CSharpScript.EvaluateAsync<T>(new_sourceCode, options, globals);
             return s;
         }
 
         public static void Execute(string sourceCode)
         {
-            var add_hashtag_start = sourceCode.Insert(0, "#");
-            var add_hashtag_end = add_hashtag_start.Insert(add_hashtag_start.Length, "\n#");
-            var start_sourceCode = add_hashtag_end;
-            var new_sourceCode = "";
+            var new_sourceCode = sourceCode;
 
-            var split_by_hastag = start_sourceCode.Split('#').ToList();
-            foreach (var hastag_split in split_by_hastag)
-            {
-                if (hastag_split is "")
-                {
-                    continue;
-                }
-
-                var newLine_split_code = hastag_split.Split('\n').ToList();
-                for (int i = 0; i < newLine_split_code.Count; i++)
-                {
-                    if (newLine_split_code.Contains(";"))
-                    {
-                        new_sourceCode += newLine_split_code;
-                        continue;
-                    }
-
-                    if (newLine_split_code[i] == "") //IGNORE EMPTY STRINGS -> ""
-                    {
-                        continue;
-                    }
-
-                    if (newLine_split_code[i].StartsWith("//")) //IGNORE STRINGS THAT START WITH "//"
-                    {
-                        new_sourceCode += newLine_split_code[i];
-                        continue;
-                    }
-
-                    if (newLine_split_code[i].Contains(" class ")) //IGNORE CLASS DECLARATIONS -> class
-                    {
-                        new_sourceCode += newLine_split_code[i];
-                        continue;
-                    }
-
-                    if (newLine_split_code[i].Contains("get") || newLine_split_code[i].Contains("set"))
-                    {
-                        var needs_format = newLine_split_code[i];
-                        var scopeOperator_split = newLine_split_code[i].Split('{', '}');
-                        foreach (var split in scopeOperator_split)
-                        {
-                            if (split == "")
-                            {
-                                continue;
-                            }
-
-                            if (split.Contains("return"))
-                            {
-                                var proptery_return = split.Insert(split.Length, ";");
-                                needs_format = needs_format.Replace(split, proptery_return);
-                                continue;
-                            }
-                            if (split.Contains("="))
-                            {
-                                var proptery_assignment = split.Insert(split.Length, ";");
-                                needs_format = needs_format.Replace(split, proptery_assignment);
-                                continue;
-                            }
-                            if (split.Contains("get") && split.Contains("set"))
-                            {
-                                var auto_proptery_get = "get;";
-                                var auto_propter_set = "set;";
-                                needs_format = needs_format.Replace("get", auto_proptery_get);
-                                needs_format = needs_format.Replace("set", auto_propter_set);
-                                continue;
-                            }
-                        }
-
-                        new_sourceCode += needs_format;
-                        continue;
-                    }
-
-                    if (newLine_split_code[i].Contains("{") || newLine_split_code[i].Contains("}")) //IGNORE SCOPE OPERATORS -> { }
-                    {
-                        new_sourceCode += newLine_split_code[i];
-                        continue;
-                    }
-
-                    else
-                    {
-                        var next_line = newLine_split_code[i + 1];
-                        if (next_line != null)
-                        {
-                            if (next_line.Contains("{"))
-                            {
-                                new_sourceCode += newLine_split_code[i];
-                                continue;
-                            }
-                            else
-                            {
-                                var needs_format = newLine_split_code[i];
-                                needs_format = needs_format.Insert(needs_format.Length, ";");
-                                new_sourceCode += needs_format;
-                                continue;
-                            }
-                        }
-                    }
-                }
-            }
+            //MULTI-THREAD THIS
+            ParseSourceCode(ref new_sourceCode);
 
             Globals globals = new Globals();
 
@@ -370,112 +350,14 @@ namespace RoslynCompiler
 
             options.AddImports(imports);
 
-            var add_hashtag_start = sourceCode.Insert(0, "#");
-            var add_hashtag_end = add_hashtag_start.Insert(add_hashtag_start.Length, "\n#");
-            var start_sourceCode = add_hashtag_end;
-            var new_sourceCode = "";
+            var new_sourceCode = sourceCode;
 
-            var split_by_hastag = start_sourceCode.Split('#').ToList();
-            foreach (var hastag_split in split_by_hastag)
-            {
-                if (hastag_split is "")
-                {
-                    continue;
-                }
-
-                var newLine_split_code = hastag_split.Split('\n').ToList();
-                for (int i = 0; i < newLine_split_code.Count; i++)
-                {
-                    if (newLine_split_code.Contains(";"))
-                    {
-                        new_sourceCode += newLine_split_code;
-                        continue;
-                    }
-
-                    if (newLine_split_code[i] == "") //IGNORE EMPTY STRINGS -> ""
-                    {
-                        continue;
-                    }
-
-                    if (newLine_split_code[i].StartsWith("//")) //IGNORE STRINGS THAT START WITH "//"
-                    {
-                        new_sourceCode += newLine_split_code[i];
-                        continue;
-                    }
-
-                    if (newLine_split_code[i].Contains(" class ")) //IGNORE CLASS DECLARATIONS -> class
-                    {
-                        new_sourceCode += newLine_split_code[i];
-                        continue;
-                    }
-
-                    if (newLine_split_code[i].Contains("get") || newLine_split_code[i].Contains("set"))
-                    {
-                        var needs_format = newLine_split_code[i];
-                        var scopeOperator_split = newLine_split_code[i].Split('{', '}');
-                        foreach (var split in scopeOperator_split)
-                        {
-                            if (split == "")
-                            {
-                                continue;
-                            }
-
-                            if (split.Contains("return"))
-                            {
-                                var proptery_return = split.Insert(split.Length, ";");
-                                needs_format = needs_format.Replace(split, proptery_return);
-                                continue;
-                            }
-                            if (split.Contains("="))
-                            {
-                                var proptery_assignment = split.Insert(split.Length, ";");
-                                needs_format = needs_format.Replace(split, proptery_assignment);
-                                continue;
-                            }
-                            if (split.Contains("get") && split.Contains("set"))
-                            {
-                                var auto_proptery_get = "get;";
-                                var auto_propter_set = "set;";
-                                needs_format = needs_format.Replace("get", auto_proptery_get);
-                                needs_format = needs_format.Replace("set", auto_propter_set);
-                                continue;
-                            }
-                        }
-
-                        new_sourceCode += needs_format;
-                        continue;
-                    }
-
-                    if (newLine_split_code[i].Contains("{") || newLine_split_code[i].Contains("}")) //IGNORE SCOPE OPERATORS -> { }
-                    {
-                        new_sourceCode += newLine_split_code[i];
-                        continue;
-                    }
-
-                    else
-                    {
-                        var next_line = newLine_split_code[i + 1];
-                        if (next_line != null)
-                        {
-                            if (next_line.Contains("{"))
-                            {
-                                new_sourceCode += newLine_split_code[i];
-                                continue;
-                            }
-                            else
-                            {
-                                var needs_format = newLine_split_code[i];
-                                needs_format = needs_format.Insert(needs_format.Length, ";");
-                                new_sourceCode += needs_format;
-                                continue;
-                            }
-                        }
-                    }
-                }
-            }
+            //MULTI-THREAD THIS
+            ParseSourceCode(ref new_sourceCode);
 
             CSharpScript.RunAsync(new_sourceCode, options, globals);
-        }
+        } 
+        #endregion
 
         #region EXPERMENTAL
         public static void SIMPLE_AUTOFIX_Execute(string sourceCode)
